@@ -12,7 +12,9 @@ The hardware used for this project was:
 - ultrasonic sensor
 - servo motor
 - esp32
+
 The software configuration:
+
 - esp-idf
 - thingspeaks platform
 - docker & docker-compose
