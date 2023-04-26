@@ -50,7 +50,9 @@ void http_SendReceive ( void * pvParameter );
 
 typedef struct xData {
  	int sock; 
- 	uint32_t val_teste;
+ 	uint32_t x_accel; 
+	uint32_t y_accel; 
+	uint32_t z_accel; 	
 } xSocket_t;
 
 const char * msg_post = \
@@ -87,7 +89,9 @@ void http_Socket(void * pvParameter)
 		}
 
 		xSocket.sock = sock;
-		xSocket.val_teste = 10
+		xSocket.x_accel = accel_x; 
+		xSocket.y_accel = accel_y; 
+		xSocket.z_accel = accel_z;		
 
 		xTaskCreate( http_SendReceive, "http_SendReceive", 10000, (void*)&(xSocket), 5, NULL );
 	}
@@ -114,7 +118,7 @@ void http_SendReceive(void * pvParameter)
 	sprintf(post_string, msg_post, apikey);
 
 	char databody[50];
-  	sprintf( databody, "{%s&field1=%d}", API_WRITE_KEY, xSocket->val_teste);
+  	sprintf( databody, "{%s&field1=%d&field2=%d&field3=%d}", API_WRITE_KEY, xSocket->x_accel, xSocket->y_accel, xSocket->z_accel);
 	sprintf( buffer , "%s%d\r\n\r\n%s\r\n\r\n", post_string, strlen(databody), databody);
   
 	int rc = send( xSocket->sock, buffer, strlen(buffer), 0 );
@@ -142,7 +146,7 @@ void http_SendReceive(void * pvParameter)
 		   rec_offset += sizeRead;
 		 }
 
-		vTaskDelay( 5/portTICK_PERIOD_MS );
+		vTaskDelay( 50/portTICK_PERIOD_MS );
 	}
 	
 	rc = close(xSocket->sock);
