@@ -15,6 +15,7 @@
  * Drivers
  */
 #include "driver/gpio.h"
+#include "driver/ledc.h"
 #include "wifi.h"
 #include <driver/i2c.h>
 #include "nvs_flash.h"
@@ -33,6 +34,12 @@
 
 #define MPU6050_ACCEL_XOUT_H 0x3B
 #define MPU6050_PWR_MGMT_1   0x6B
+
+//PWM
+#define pinServo 18
+#define ServoMsMin 0.06
+#define ServoMsMax 2.1
+#define ServoMsAvg ((ServoMsMax-ServoMsMin)/2.0)
 
 i2c_config_t conf;
 i2c_cmd_handle_t cmd;
@@ -230,6 +237,74 @@ void task_mpu6050() {
 	
 	vTaskDelete(NULL);
 }
+
+
+void config_servo()
+{
+	ledc_timer_config_t ledc_timer = {
+			.speed_mode       = LEDC_LOW_SPEED_MODE,
+			.timer_num        = LEDC_TIMER_0,
+			.duty_resolution  = LEDC_TIMER_13_BIT,
+			.freq_hz          = 50,  
+			.clk_cfg          = LEDC_AUTO_CLK
+	};
+	ledc_timer_config(&ledc_timer);
+	ledc_channel_config_t ledc_channel = {
+			.speed_mode     = LEDC_LOW_SPEED_MODE,
+			.channel        = LEDC_CHANNEL_0,
+			.timer_sel      = LEDC_TIMER_0,
+			.intr_type      = LEDC_INTR_DISABLE,
+			.gpio_num       = pinServo,
+			.duty           = 0,
+			.hpoint         = 0
+	};
+	ledc_channel_config(&ledc_channel);  	
+}
+void servoDeg0() {
+  int duty = (int)(100.0*(ServoMsMin/20.0)*81.91);
+  printf("%fms, duty = %f%% -> %d\n",ServoMsMin, 100.0*(ServoMsMin/20.0), duty);
+  ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, duty);
+  ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0);  
+  vTaskDelay( 2000/portTICK_PERIOD_MS ); 
+  ledc_stop(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, 0);
+}
+
+void servoDeg90() {
+
+  int duty = (int)(100.0*(ServoMsAvg/20.0)*81.91);
+  printf("%fms, duty = %f%% -> %d\n",ServoMsAvg, 100.0*(ServoMsAvg/20.0), duty);
+  ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, duty);
+  ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0);  
+  vTaskDelay( 2000/portTICK_PERIOD_MS ); 
+  ledc_stop(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, 0);
+}
+
+void servoDeg180() {
+
+  int duty = (int)(100.0*(ServoMsMax/20.0)*81.91);
+  printf("%fms, duty = %f%% -> %d\n",ServoMsMax, 100.0*(ServoMsMax/20.0), duty);
+  ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, duty);
+  ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0);  
+  vTaskDelay( 2000/portTICK_PERIOD_MS ); 
+  ledc_stop(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, 0);
+}
+
+void manualServo() {
+
+	for (;;)
+	{
+		printf("  0 degree:");
+		servoDeg0();
+		printf(" 90 degree:");
+		servoDeg90();
+		printf("180 degree:");
+		servoDeg180();
+		printf(" 90 degree:");
+		servoDeg90();		
+	}
+
+}
+
 void app_main(void)
 {
 	esp_err_t ret = nvs_flash_init();
@@ -242,6 +317,8 @@ void app_main(void)
 
 	wifi_config();
 	init_mpu6050();
+	config_servo();
+
     if( ( xTaskCreate( http_Socket, "http_Socket", 2048, NULL, 5, NULL )) != pdTRUE )
 	{
 		ESP_LOGI( TAG, "error - nao foi possivel alocar http_Socket.\n" );	
@@ -252,6 +329,12 @@ void app_main(void)
 	{
 		ESP_LOGI( TAG, "error - nao foi possivel alocar task_mpu6050.\n" );
 		return;
-	}	      
+	}
+
+	if( xTaskCreate( manualServo, "manualServo", 4048, NULL, 5, NULL ) != pdTRUE )
+	{
+		ESP_LOGI( TAG, "error - nao foi possivel alocar task_mpu6050.\n" );
+		return;
+	}			      
 
 }
