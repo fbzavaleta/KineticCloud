@@ -1,41 +1,32 @@
-# KineticCloud
-KineticCloud is an innovative RTOS system based on the ESP32 microcontroller and designed to enable precise, real-time control of servo motors based on the system's inertial acceleration. KineticCloud incorporates inercial sensors that provide real-time data on the state of the system, which is sent to a cloud-based IoT platform for analysis and processing. The system is designed to facilitate the development of applications that require precise, real-time control of servo motors, such as robotics and automation systems.
+# _Sample project_
 
-This project was developed  with my computer engineering students at the [FIAP](https://www.fiap.com.br/) university - São Paulo, Brasil.
+(See the README.md file in the upper level 'examples' directory for more information about examples.)
 
-- [Setup](#setup)
-- [Development](#development)
-- [Run](#contribution-guide)
+This is the simplest buildable example. The example is used by command `idf.py create-project`
+that copies the project to user specified path and set it's name. For more information follow the [docs page](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/build-system.html#start-a-new-project)
 
-## Setup
 
-The hardware used for this project was:
-- mpu6050
-- ultrasonic sensor
-- servo motor
-- esp32
 
-The software configuration:
+## How to use example
+We encourage the users to use the example as a template for the new projects.
+A recommended way is to follow the instructions on a [docs page](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/build-system.html#start-a-new-project).
 
-- esp-idf
-- thingspeaks platform
-- docker & docker-compose
-- python3
+## Example folder contents
 
-## Development
+The project **sample_project** contains one source file in C language [main.c](main/main.c). The file is located in folder [main](main).
 
-The solution architecture:
-![iot-architecture](docs/code-strategy.png)
+ESP-IDF projects are built using CMake. The project build configuration is contained in `CMakeLists.txt`
+files that provide set of directives and instructions describing the project's source files and targets
+(executable, library, or both). 
 
-We are using the esp-idf on vscode and the enviroment is linux based system. Please read the docs for more information.
+Below is short explanation of remaining files in the project folder.
 
-## Run
-
-First start a new project, using the esp-idf. You should have a folder named `template-app` on your `~/esp` folder.
-Reeplace the main folder:
-
-```sh
-cp -r <where-you-clone-this-repo>/main ~/esp/template-app
 ```
-
-Then build and flash the project using the esp-idf extencion on vscode, detail instructions on the docs.
+├── CMakeLists.txt
+├── main
+│   ├── CMakeLists.txt
+│   └── main.c
+└── README.md                  This is the file you are currently reading
+```
+Additionally, the sample project contains Makefile and component.mk files, used for the legacy Make based build system. 
+They are not used or needed when building with CMake and idf.py.

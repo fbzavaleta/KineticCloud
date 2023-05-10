@@ -307,8 +307,8 @@ void manualServo() {
 
 	for (;;)
 	{
-		printf("  0 degree:");
-		servoDeg0();
+		//printf("  0 degree:");
+		//servoDeg0();
 		printf(" 90 degree:");
 		servoDeg90();
 		printf("180 degree:");
@@ -393,10 +393,10 @@ void app_main(void)
     }
 	ESP_ERROR_CHECK(ret);
 
-	//wifi_config();
-	//init_mpu6050();
-	//config_servo();
-/*
+	wifi_config();
+	init_mpu6050();
+	config_servo();
+
     if( ( xTaskCreate( http_Socket, "http_Socket", 2048, NULL, 5, NULL )) != pdTRUE )
 	{
 		ESP_LOGI( TAG, "error - nao foi possivel alocar http_Socket.\n" );	
@@ -414,7 +414,7 @@ void app_main(void)
 		ESP_LOGI( TAG, "error - nao foi possivel alocar task_mpu6050.\n" );
 		return;
 	}	
-*/
+
 	if( (XQuee_ultrasonic = xQueueCreate( 10, sizeof(CMD_t)) ) == NULL )
 	{
 		ESP_LOGI( TAG, "error - nao foi possivel alocar XQuee_ultrasonic.\n" );
