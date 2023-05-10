@@ -16,10 +16,10 @@
  */
 #include "driver/gpio.h"
 #include "driver/ledc.h"
-#include "wifi.h"
 #include <driver/i2c.h>
 #include "nvs_flash.h"
-
+#include "ultrasonic.h"
+#include "wifi.h"
 /*
  * logs
  */
@@ -35,7 +35,21 @@
 #define MPU6050_ACCEL_XOUT_H 0x3B
 #define MPU6050_PWR_MGMT_1   0x6B
 
-//PWM
+//Ultrasonic
+#define ECHO_GPIO   26
+#define TRIGG_GPIO  25
+#define CMD_MEASURE	300
+#define MAX_DISTANCE_CM 500 // 5m max
+
+QueueHandle_t XQuee_ultrasonic;
+
+typedef struct {
+	uint16_t command;
+	uint32_t distance;
+	TaskHandle_t taskHandle;
+} CMD_t;
+
+//PWM servo
 #define pinServo 18
 #define ServoMsMin 0.06
 #define ServoMsMax 2.1
@@ -305,6 +319,70 @@ void manualServo() {
 
 }
 
+void ultrasonic()
+{
+	CMD_t cmdBuf;
+	cmdBuf.command = CMD_MEASURE;
+	cmdBuf.taskHandle = xTaskGetCurrentTaskHandle();
+
+	ultrasonic_sensor_t sensor = {
+		.trigger_pin = TRIGG_GPIO,
+		.echo_pin = ECHO_GPIO
+	};
+
+	ultrasonic_init(&sensor);    
+
+	while (true) {
+		uint32_t distance;
+		esp_err_t res = ultrasonic_measure_cm(&sensor, MAX_DISTANCE_CM, &distance);
+		if (res != ESP_OK) {
+			printf("Error: ");
+			switch (res) {
+				case ESP_ERR_ULTRASONIC_PING:
+					printf("Cannot ping (device is in invalid state)\n");
+					break;
+				case ESP_ERR_ULTRASONIC_PING_TIMEOUT:
+					printf("Ping timeout (no device found)\n");
+					break;
+				case ESP_ERR_ULTRASONIC_ECHO_TIMEOUT:
+					printf("Echo timeout (i.e. distance too big)\n");
+					break;
+				default:
+					printf("%d\n", res);
+			}
+		} else {
+			ESP_LOGI(TAG,"Send Distance: %d cm, %.02f m\n", distance, distance / 100.0);
+			cmdBuf.distance = distance;
+			xQueueSend(XQuee_ultrasonic, &cmdBuf, portMAX_DELAY);
+		}
+		vTaskDelay(1000 / portTICK_PERIOD_MS);
+	}    
+}
+
+void data_orquestator()
+{
+	CMD_t cmdBuf;
+	uint8_t ascii[30];
+
+		for(;;)
+		{
+			xQueueReceive( XQuee_ultrasonic, &cmdBuf, portMAX_DELAY ); 	
+
+			strcpy((char*)ascii, "Ultrasonic DISTANCE");
+			sprintf((char*)ascii, "%d cm",cmdBuf.distance );
+			
+			
+			if( DEGUG ) 
+			{
+				ESP_LOGI(TAG,"\n\nDistance msg \ 
+									value: %s", ascii);
+			}
+
+			vTaskDelay( 10/portTICK_PERIOD_MS );	
+		}
+	vTaskDelete(NULL);
+}
+
 void app_main(void)
 {
 	esp_err_t ret = nvs_flash_init();
@@ -315,10 +393,10 @@ void app_main(void)
     }
 	ESP_ERROR_CHECK(ret);
 
-	wifi_config();
-	init_mpu6050();
-	config_servo();
-
+	//wifi_config();
+	//init_mpu6050();
+	//config_servo();
+/*
     if( ( xTaskCreate( http_Socket, "http_Socket", 2048, NULL, 5, NULL )) != pdTRUE )
 	{
 		ESP_LOGI( TAG, "error - nao foi possivel alocar http_Socket.\n" );	
@@ -335,6 +413,24 @@ void app_main(void)
 	{
 		ESP_LOGI( TAG, "error - nao foi possivel alocar task_mpu6050.\n" );
 		return;
-	}			      
+	}	
+*/
+	if( (XQuee_ultrasonic = xQueueCreate( 10, sizeof(CMD_t)) ) == NULL )
+	{
+		ESP_LOGI( TAG, "error - nao foi possivel alocar XQuee_ultrasonic.\n" );
+		return;
+	} 
+
+    if( ( xTaskCreate( ultrasonic, "ultrasonic", 2048, NULL, 5, NULL )) != pdTRUE )
+	{
+		ESP_LOGI( TAG, "error - nao foi possivel alocar ultrasonic.\n" );	
+		return;		
+	}   
+
+    if( ( xTaskCreate( data_orquestator, "data_orquestator", 2048, NULL, 5, NULL )) != pdTRUE )
+	{
+		ESP_LOGI( TAG, "error - nao foi possivel alocar data_orquestator.\n" );	
+		return;		
+	}   
 
 }

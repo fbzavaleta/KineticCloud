@@ -12,13 +12,13 @@ API
 */
 #define SERVER_IP "184.106.153.149" 
 #define SERVER_PORT 80 
-#define API_WRITE_KEY "YOUR-PRIVATE-KEY"
+#define API_WRITE_KEY "7GA8O6N1WIPHQW4R"
 
 /*
 wifi credencials
 */
-#define EXAMPLE_ESP_WIFI_SSID 	"YOUR-NETWORK-NAME" 
-#define EXAMPLE_ESP_WIFI_PASS 	"YOUR-PASSWORD" 
+#define EXAMPLE_ESP_WIFI_SSID 	"RedmiNote8" 
+#define EXAMPLE_ESP_WIFI_PASS 	"36413752" 
 
 /*
 Function avaliable from this module
